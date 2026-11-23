@@ -20,7 +20,7 @@ Perfect Vision 是基于海康机器人 **VisionMaster 4.3 SDK** 二次开发的
 | 工程与交付 | MSBuild / VS2022、PowerShell、Python ReportLab、WiX v6 Burn、Obfuscar | 构建与回归脚本、MSI + 引导程序安装包、发布签名与完整性校验 |
 | 质量保障 | 自研回归宿主、GitHub Actions（windows-latest） | 无 SDK 的核心/通讯回归常驻 CI；VM、相机与授权相关验证需本机官方环境 |
 
-本仓库公开**应用核心源码**：Core、Infrastructure、VisionMaster 适配、Cameras、Communication、App 与独立 SDK。交付版另有设备授权、方案包加密、安装包与签发工具，不在本仓库发布。
+本仓库公开**应用核心源码**：Core、Infrastructure、VisionMaster 适配、Cameras、Communication、App 与独立 SDK。仓库是应用主线源码快照，不等同于 5.0.4 完整交付树；交付版的相机控制窗、WPF 参数编辑器宿主等界面模块，以及设备授权、方案包加密、安装包与签发工具，未纳入本仓库。
 
 ## 功能
 

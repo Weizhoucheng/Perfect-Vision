@@ -1,113 +1,181 @@
 # Perfect Vision
 
-Perfect Vision 是基于海康机器人 **VisionMaster 4.3 SDK** 二次开发的工业视觉检测上位机。它用 C# / .NET Framework 4.7.2 / WinForms 替代 VM 客户端承担产线侧工作：加载并运行 `.sol` 方案、接入工业相机、对接 PLC 与下位机、归档检测数据，并以独立 SDK 形式向其他程序开放检测能力。
+一个用 C# 写的工业视觉上位机。底层跑海康机器人 VisionMaster 4.3 的 `.sol` 方案，外面套一层适合产线用的界面：加载方案、接相机、跟 PLC 通讯、把检测结果和图片存下来。
 
-**技术栈**：C# 7.3 · .NET Framework 4.7.2 · Windows x64 · WinForms（自绘主题 + WPF 互操作）· VisionMaster 4.3 SDK（STA 串行调度）· MVS SDK · Modbus TCP / TCP / 串口 · CSV / PNG / XLSX / JSON。
+![主界面](docs/images/main-detection.png)
 
-> **命名说明**：产品名为 **Perfect Vision**。为兼容既有现场部署、设备授权、注册表项与自动化脚本，可执行文件与程序集继续沿用 `XVision.*` 命名，例如 `XVision.exe`、`XVision.Sdk.dll`。仓库内 `VisionInspect.*` 为工程命名空间。
+上面是主界面。左边是 VM 的渲染控件，右边是结果、参数、日志三个页签。截图跑的是我平时调试用的方案（一个金属环的定位加圆查找），NG 是故意挑的缺陷件，不是摆拍。截图时没接相机，状态栏显示“相机未连接”是正常的。
 
-## 技术栈总览
+## 为什么会有这个东西
 
-| 层次 | 采用技术 | 关键落地 |
-| --- | --- | --- |
-| 语言与运行时 | C# 7.3、.NET Framework 4.7.2、x64 | 七个工程分层；`Directory.Build.targets` 强制 x64 / 4.7.2，禁止 AnyCPU 与 Prefer32Bit |
-| 桌面界面 | WinForms、WPF 互操作（ElementHost，交付版参数编辑器宿主）、GDI+ 自绘、PerMonitorV2 DPI | 日夜主题、圆角按钮/分段控件/自绘页签、无边框窗口、十字线透明叠加层 |
-| 视觉引擎 | HIKROBOT VisionMaster 4.3.0 SDK：`VM.Core`、`VM.PlatformSDKCS`、`VMControls.Winform.Release`、`ImageSourceModuleCs`、`FormatModuleCs` | 方案加载/切换/保存、SDK 注图、`Run()` + 完成回调、流程/模块输出解析、官方参数编辑器 |
-| 线程模型 | 专用 STA 线程 + WinForms 消息泵、`Task` / `SemaphoreSlim` / `TaskCompletionSource` | VM 对象全部串行访问；检测、相机、通讯、归档均不占用 UI 线程 |
-| 图像采集 | HIKROBOT MVS SDK：`MvCameraControl.Net`、`MVDCore.Net`、`MVDImage.Net` | 设备枚举、连接、回调取图、软/硬触发、曝光增益写入并回读、掉线自动重连 |
-| 设备通讯 | 自研 Modbus TCP 主站（FC03/FC16）、TCP 触发服务、`SerialPort` | 通道隔离、自动重连、检测中在线改配置、结果寄存器映射、ASCII/HEX 命令 |
-| 数据与报表 | JSON（`JavaScriptSerializer`）、CSV、PNG、OpenXML XLSX（`ZipArchive`） | 有界图片队列 + 单写线程、按日检测日志、批次报表、不依赖 Office/COM |
-| 工程与交付 | MSBuild / VS2022、PowerShell、Python ReportLab、WiX v6 Burn、Obfuscar | 构建与回归脚本、MSI + 引导程序安装包、发布签名与完整性校验 |
-| 质量保障 | 自研回归宿主、GitHub Actions（windows-latest） | 无 SDK 的核心/通讯回归常驻 CI；VM、相机与授权相关验证需本机官方环境 |
+VisionMaster 客户端功能很全，但产线不会让操作员直接开它。操作员只需要三件事：选方案、按启动、看 OK 还是 NG。其余的加载路径、相机参数、PLC 地址、数据存哪，最好都锁死。
 
-本仓库公开**应用核心源码**：Core、Infrastructure、VisionMaster 适配、Cameras、Communication、App 与独立 SDK。仓库是应用主线源码快照，不等同于 5.0.4 完整交付树；交付版的相机控制窗、WPF 参数编辑器宿主等界面模块，以及设备授权、方案包加密、安装包与签发工具，未纳入本仓库。
+我一开始的想法很简单，给 VM 套个壳就行。真做起来才发现壳也不好套：VM 的渲染控件是原生的，参数编辑器是 WPF，流程对象不是线程安全的，方案加载和释放有严格顺序，相机回调也不能在 UI 线程上磨蹭。这个项目基本就是围着这几个问题长出来的。
 
-## 功能
+## 界面
 
-| 范围 | 已实现内容 |
-| --- | --- |
-| 方案与检测 | `.sol` 加载/切换/保存，单次与连续检测，暂停/继续/停止，输出解析与 OK/NG 判定 |
-| 参数与模板 | 嵌入 VM 官方参数编辑器，支持位置修正、匹配、直线/圆查找等模块的 ROI、模板与输入绑定；标量参数预设 |
-| 图像输入 | 单张图片、整个文件夹导入，顺序/循环播放；MVS 相机枚举、连接、触发及参数写入 |
-| 界面 | 日夜主题、图标式切换、自绘控件及统一 Logo，VM 原生图像与参数控件嵌入 |
-| 通讯 | Modbus TCP FC03/FC16；TCP 主动连接/监听与结果模板；串口 ASCII/HEX；收发调试 |
-| 配置 | 通讯独立于检测连接；业务配置应用后无需重启，失败报错并尝试恢复旧配置 |
-| 数据 | 线程安全统计、有界异步图片归档、按日 CSV、无 Office 依赖的 XLSX 报表、审计日志 |
-| SDK 与部署 | `XVision.Sdk` 独立调用、运行环境诊断、官方依赖检查和部署辅助脚本 |
+### 主界面和检测
 
-## 架构
+主界面左边是图像区。VM 的 `VmRenderControl` 负责画图、ROI 和结果，我没有重画这一块，只在上面加了一层透明窗口画十字线、坐标和大号的 OK/NG。缩放、平移还是 VM 自己处理。
 
-```mermaid
-flowchart TB
-  UI[WinForms 界面] --> BOOT[组合根与运行配置]
-  BOOT --> CORE[Core 检测状态机与接口]
-  CORE --> VM[VM 适配层与 STA 调度]
-  VM --> SDK[官方 VisionMaster SDK]
-  CORE --> CAMERA[MVS 图像采集]
-  CORE --> PIPE[结果处理管道]
-  PIPE --> IO[Modbus TCP / TCP / 串口]
-  PIPE --> DATA[CSV / 图片归档 / XLSX]
-  API[XVision.Sdk 独立调用] --> VM
+右边三个页签：结果数据是流程输出和模块输出，参数配置嵌的是 VM 官方参数编辑器，运行日志是系统日志和检测日志的尾部。
+
+检测只有两种模式，单次和连续。F1 启动，F3 停止，暂停之后可以继续。状态栏那一排放的是相机、Modbus、串口、TCP 的实时状态，现场出问题先看这一排，比翻日志快。
+
+判定逻辑在 `ResultJudge` 里。优先找流程输出里名字叫“检测结果”的字符串，比较 OK/NG；没有这个输出就扫全部文本，任何一个 NG 都判 NG；最后才退到 `Procedure.IsRunOK`。这么排是因为现场见过太多方案没配流程输出，直接看 `IsRunOK` 会漏判。
+
+### 相机
+
+![相机参数](docs/images/camera-settings.png)
+
+截图里是 MV-CS050-10GC，2448×2048，Mono8，参数停在停止采集的状态。
+
+相机用的是海康 MVS SDK。左边预览，右边是参数表：触发模式、触发源、曝光、增益、像素格式、包长、帧率这些。改完按回车写入，下面会显示实际回读值。
+
+这里有一个我踩过的坑：早期版本写曝光失败被 `TrySetFloat` 吞掉了，界面显示 5000 us，相机其实还在自动曝光，图像一亮一暗，查了半天。现在写入之后一定回读，对不上就抛 `CameraSdkException`，宁可让操作员看见报错，也不假装成功。
+
+### 通讯
+
+![通讯设置](docs/images/communication-tcp.png)
+
+截图是本机回环测试（127.0.0.1），不是现场 PLC，所以地址和端口看着像随手填的。
+
+通讯分三个页签：Modbus TCP、TCP、串口。Modbus 只做了 FC03 读保持寄存器和 FC16 写多寄存器，够接常见的 PLC；TCP 既能主动连上位机，也能监听产线的触发；串口支持 ASCII 和 HEX 两种命令格式。
+
+配置改完点应用，会先停检测，再重建连接，失败就回滚旧配置。这个顺序不能反，检测跑着的时候直接换通讯参数，结果会写到一半丢一半。
+
+### 参数
+
+![参数配置](docs/images/parameter-editor.png)
+
+参数页嵌的是 VM 官方的 `VmParamsConfigControl`，不是我画的。位置修正的输入绑定、模板、ROI 都还是 VM 自己那套，我只做了宿主、布局和权限控制。
+
+只有管理员、并且检测处于空闲状态时才允许改。检测中改参数，轻则下一次运行不生效，重则原生层直接崩，进程都没了。
+
+## 技术栈，以及为什么这么选
+
+### .NET Framework 4.7.2，没追 .NET 8
+
+不是不想用新东西。VM 4.3 的托管程序集和 WinForms 控件都是按 .NET Framework 编译的，换到 .NET 6/8 要么加一层 COM 宿主，要么等海康出新版本。工控机上多一层就多一个故障点，所以老老实实 4.7.2。
+
+平台锁死 x64，`Directory.Build.targets` 里写了检查，AnyCPU 和 x86 直接编译不过。VM 的算法模块是 64 位原生库，32 位进程加载会 `BadImageFormatException`，与其到现场报错，不如在编译时就拦住。
+
+### VM 4.3：所有调用挤到一根 STA 线程
+
+VM 的方案、流程、模块参数都不是并发安全的，底层还有 COM 和原生组件。我的做法是开一根 STA 线程，建一个隐藏的消息窗口，跑 WinForms 消息泵，所有 VM 调用通过 `Control.BeginInvoke` 排队进去。加载方案、跑流程、读参数、保存、关闭，全走这一根线程。
+
+一开始我按官方示例用了 `SyncRun()`。测试方案没事，换到现场一个模块比较多的方案，点启动界面就卡住，日志停在 `Run()` 那一行。后来才搞明白，`SyncRun()` 会占住需要处理消息的 STA，VM 内部的消息泵转不起来，自己等自己。
+
+现在改成 `Run()` 加完成回调：STA 线程只负责 `SetImageData` 和 `Run()`，然后立刻返回消息泵；普通线程用 `TaskCompletionSource` 等 `OnWorkEndStatusCallBack`；回调到了再回 STA 读 `ModuResult`、释放 `ImageBaseData`。另外加了一个 `RunTimeoutMs`，默认 30 秒，超时只标记异常，不强行释放方案，因为迟到回调回来再释放会直接访问已销毁的原生对象。
+
+### 相机：MVS SDK
+
+相机这块没什么花活，就是 `MV_CC_EnumDevices_NET`、`MV_CC_OpenDevice_NET`、`MV_CC_RegisterImageCallBackEx_NET` 这一套。回调里只做三件事：拷贝帧、唤醒等待的检测线程、按抽帧间隔发预览。算法和 UI 都不进回调，回调线程一堵就开始丢帧。
+
+曝光、增益、触发源这些参数，写入后统一 `MV_CC_GetFloatValue_NET` 回读。相机型号和固件会量化数值，回读对不上是正常的，日志里记差异，不把它当失败。
+
+掉线重连是单独一个监控线程，按配置间隔查 `MV_CC_IsDeviceConnected_NET`。拔网线、拔 USB 都试过，能自己回来，但正在跑的那一轮检测会失败，这是预期内的。
+
+### 通讯：没上 NModbus
+
+Modbus TCP 是自己写的，裸 TCP 加手写 MBAP/PDU。原因很实际：少一个第三方 DLL，现场就少一个版本冲突和审批的麻烦；协议真出问题，报文不长，自己写的反而好查。
+
+停止的时候有一个坑：读线程阻塞在 socket 上，`CancellationToken` 取消不了。现在的做法是停止时直接关掉这次连接的 socket，让阻塞读抛出来，再等线程退出。连接不能复用，下次重连重新建。
+
+TCP 触发最多接 32 个客户端，每行 4096 字节，命令按行解析。串口就是 `System.IO.SerialPort`，ASCII 和 HEX 两套编解码。每个通道独立捕获异常、独立重连，PLC 挂了不影响本地判定和记录，只影响产线联锁，这个边界要提前跟自动化的人说清楚。
+
+### 数据：CSV、PNG、XLSX，没上数据库
+
+检测记录按天写 CSV，一行一次检测，字段固定，出问题可以直接用记事本打开。图片按 `年/月/日/OK|NG` 存 PNG，走一个有界队列加单写线程，队列满了丢图但保留记录，不会把检测拖死。
+
+报表是手写的 OpenXML。对，就是自己拼 `[Content_Types].xml`、`workbook.xml`、`sheet1.xml`，再用 `ZipArchive` 打包。听起来土，但工控机不一定装 Office，引 ClosedXML 又要多带一堆 DLL，这样最省事。
+
+没上 MySQL，也没上 SQLite。这个项目的量级用文件足够，备份就是拷目录，现场不需要再维护一个数据库服务。
+
+### 界面：WinForms 为主，WPF 只做宿主
+
+主界面、设置、登录都是 WinForms，控件基本是自绘的，日夜主题在 `Theme.cs` 和 `Theme.Animation.cs` 里。VM 的参数编辑器是 WPF，所以用 `ElementHost` 把它嵌进来，工程里引了 `PresentationCore`、`PresentationFramework`、`WindowsBase`，仅此而已。
+
+透明叠加层是另一个坑。我一开始拿一个半透明的 WinForms 子控件盖在 `VmRenderControl` 上，结果整块变黑，VM 的原生渲染直接被挡住。后来改成独立的顶层窗口，`TransparencyKey` 加 `WS_EX_TRANSPARENT`、`HTTRANSPARENT`，视觉上透明、鼠标透传，缩放平移还是底下 VM 控件收到。
+
+### 打包：WiX Burn
+
+交付给客户的是一个 EXE 安装包，实际上是 WiX Burn 的引导程序：先检查 .NET Framework、VC++ 运行库、MVS 相机驱动，再装客户端 MSI。安装包不在这里，仓库只放源码。
+
+发布版还做了程序集混淆和签名，这部分也不在公开仓库，原因下面说。
+
+## 几个现在还记得的坑
+
+**`Environment.TickCount` 会翻转。** 预览节流最早用它算间隔，理论上 24.9 天符号位翻转；这种 bug 在产线上就是第 25 天突然冻住，很难查。后来换成 `Stopwatch` 的单调计数，不想赌。
+
+**配置热更新要先停检测。** 一开始觉得改通讯参数而已，直接换就行，结果检测线程还在写结果，旧连接已经关了。现在统一走“停检测 → 应用 → 失败回滚 → 保存配置”的顺序。
+
+**用户库损坏不能静默重建。** 读 `users.json` 失败就重新生成默认账号，等于把现场账号洗了。现在的做法是备份坏文件、拒绝启动认证，让人来处理。
+
+**方案没配流程输出时，`IsRunOK` 不可靠。** 有些方案所有模块都成功，但流程输出没配，`IsRunOK` 是 false。现在会退到模块汇总状态，界面上标“模块状态”，让人知道这个 OK 是从哪来的。
+
+## 代码结构
+
+```
+VisionInspect.sln
+src/
+  VisionInspect.Core            模型、接口、检测状态机、判定、统计
+  VisionInspect.Infrastructure  JSON 配置、日志、CSV、XLSX、图片归档
+  VisionInspect.VisionMaster    VM 适配、STA 调度、参数、输出解析
+  VisionInspect.Cameras         MVS 相机、回调、重连
+  VisionInspect.Communication   Modbus、TCP、串口
+  VisionInspect.App             WinForms 界面、启动和退出
+  XVision.Sdk                   不带界面的检测 SDK
+tests/                          回归程序
+scripts/                        构建、发布、回归脚本
+deployment/                     运行环境检查和授权方式选择
+docs/                           架构、实现笔记、操作、部署、验证
 ```
 
-界面、检测流程、设备适配和存储分层。VM 对象交给专用 STA 线程及消息泵串行访问；检测采用 `Run()` + `OnWorkEndStatusCallBack`，避免 `SyncRun()` 阻塞 SDK 消息泵。结果处理、归档与通讯在后台任务执行，任一后处理失败都不会改写已产生的 OK/NG。
+依赖方向是单向的：`App → 适配层/基础设施 → Core`。Core 不引任何 SDK，也不引 WinForms，这样核心状态机和判定逻辑可以单独跑回归，不需要装 VM。
 
-## 快速开始
+## 编译和运行
 
-1. Windows x64 上安装 VS 2022 的“.NET 桌面开发”工作负载和 .NET Framework 4.7.2 开发包。
-2. 安装官方 VisionMaster 4.3.0 开发环境及相机 SDK，并准备覆盖方案算法的有效 VM 授权。
-3. 在仓库根目录使用 PowerShell 构建：
+需要 VS2022 的 .NET 桌面开发工作负载、.NET Framework 4.7.2 开发包、VisionMaster 4.3.0 x64 和 MVS SDK。VM 的路径通过 `VisionMasterRoot` 传，MVS 通过 `MvsSdkDir` 传，脚本会自己找。
 
 ```powershell
 .\scripts\Build.ps1 -Configuration Release `
   -VisionMasterRoot 'D:\Program Files\VisionMaster4.3.0' `
   -MvsSdkDir 'C:\Program Files (x86)\MVDAlgorithmSDK\ReferencedAssemblies'
+
 & '.\src\VisionInspect.App\bin\Release\XVision.exe' '--data=D:\PerfectVisionData'
 ```
 
-首次运行生成本地配置。演示账号为 `admin / admin` 与 `operator / 123456`；部署前修改密码。当前管理员密码按本地配置明文保存，详见 [安全说明](SECURITY.md)。
+第一次启动会生成配置。演示账号 `admin / admin` 和 `operator / 123456`，部署前必须改。管理员密码目前是明文存在配置里，这一点在 `SECURITY.md` 里写清楚了，不算企业级认证。
 
-在 VM 编辑器中验证自己的方案，打开 Perfect Vision 后加载 `.sol`，导入本地图片并执行单次检测。相机与下位机联调前，先在本地图片模式确认方案输出、判定和数据记录。
-
-详细路径配置和发布步骤见 [构建与部署](docs/DEPLOYMENT.md)。
-
-## 仓库导航
-
-```text
-VisionInspect.sln       解决方案，保留现有内部命名
-src/                   Core、Infrastructure、VisionMaster、Cameras、Communication、App、XVision.Sdk
-config/                脱离现场配置的示例
-samples/               SDK 调用代码与合成图片
-scripts/               构建、发布和回归入口
-tests/                 回归测试程序
-deployment/            环境检查与官方授权方式选择辅助脚本
-docs/                  架构、技术栈、操作、SDK、验证与已知边界
-```
-
-## 验证
-
-不需要 VM 运行授权的核心与通讯基础回归：
+不想装 VM 也能跑核心回归：
 
 ```powershell
 .\scripts\Test-Core.ps1 -Configuration Release
 .\src\VisionInspect.Communication\Tests\Run-Regression.ps1 -Configuration Release
 ```
 
-完整 GUI、SDK 与集成测试需要本机官方 SDK；真实算法测试还需要有效许可。历史验证记录与本次文档整理结果见 [验证矩阵](docs/VERIFICATION.md)。GitHub Actions 仅执行无需海康库的核心与通讯基础回归，完整软件不能在没有官方 SDK 的环境中构建。
+## 现在能做什么，不能做什么
 
-## 使用范围
+能做：加载和切换 `.sol`、单次/连续检测、暂停继续停止、MVS 相机采集和参数、Modbus TCP/TCP/串口、CSV/PNG/XLSX 归档、独立 SDK 调用。
 
-- 本次分析的 Perfect Vision 5.0.4 交付版检测引擎为 VisionMaster，未集成 HALCON、OpenCV 或自研替代算法；仓库保留 `IAlgorithmEngine` 抽象以便扩展。
-- `.sol` 需要匹配的官方 VM 运行库与有效许可，二次开发不改变官方授权条件。
-- 数据归档使用本地 JSON / CSV / PNG / XLSX，不依赖 MySQL、SQL Server 或 Office；本仓库不含数据库服务端实现。
-- Modbus 仅实现 TCP FC03/FC16；串口通道不等于 Modbus RTU。
-- 本机模拟端点测试不能替代现场 PLC、串口设备和工业相机验收。
-- 当前成功执行记录基于 USB 授权；无 USB 运行仍需合适的官方授权并另行验证。
-- 日夜切换已有连续 20 次回归记录；未作零故障或所有负载下零卡顿承诺。
+不能做，或者没做完：
+
+- 检测引擎只有 VM。HALCON、OpenCV 都没接，源码里留了 `IAlgorithmEngine` 抽象，但只有 `VmAlgorithmEngine` 一个实现。
+- Modbus 只有 TCP FC03/FC16，没有 RTU。串口通道不等于 Modbus RTU，现场别混。
+- 没有 MES、HTTP 上传、数据库。数据都在本地。
+- 真实产线的相机、PLC、168 小时拷机还没做完。仓库里的验证记录只能说明软件在测试环境下跑过，不能替代现场验收。
+- 无 USB 狗的运行还没验收。现在的成功记录是在 USB 授权下跑的。
+
+## 命名和仓库
+
+产品叫 Perfect Vision，但 exe 和程序集还叫 `XVision`。不是懒得改：现场注册表、数据目录、授权文件、一堆脚本都按 `XVision` 写死了，改一次升级会炸。所以对外统一 Perfect Vision，内部的 `XVision.exe`、`XVision.Sdk.dll` 不动，看到的时候别觉得奇怪。
+
+仓库里是应用主线源码。5.0.4 交付包里还有相机控制窗、WPF 参数宿主、设备授权、加密方案包、安装包和签发工具，这些要么依赖商业授权代码，要么带私钥，不往公开仓库放。
 
 ## 文档
 
-- [技术栈与实现分析](docs/TECH_STACK.md)
+- [实现笔记：VM / MVS / 通讯 / 数据](docs/TECH_STACK.md)
 - [架构与线程模型](docs/ARCHITECTURE.md)
 - [操作指南](docs/USER_GUIDE.md)
 - [通讯与配置即时应用](docs/COMMUNICATION_LIVE_SETTINGS.md)
@@ -115,12 +183,4 @@ docs/                  架构、技术栈、操作、SDK、验证与已知边界
 - [主题切换透明覆盖层问题复盘](docs/THEME_OVERLAY_FIX.md)
 - [第三方依赖与许可边界](THIRD_PARTY_NOTICES.md)
 
-仓库展示源码，不预设开源许可；未附许可证的使用权限不因源码可见而扩大。第三方算法、商标及运行库遵循其各自条款。
-
-## 界面预览
-
-以下为隔离测试配置下的真实设置窗体。主界面操作和原生图像显示验证见验证矩阵。
-
-| 白天 | 夜间 |
-| --- | --- |
-| ![白天设置](docs/images/settings-day.png) | ![夜间设置](docs/images/settings-night.png) |
+仓库没有加开源许可证，源码可见不等于可以随便商用。第三方算法、商标和运行库按各自条款来。

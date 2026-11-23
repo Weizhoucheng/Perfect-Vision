@@ -24,7 +24,7 @@ namespace VisionInspect.App.UI
             _logger = logger;
 
             Theme.StyleForm(this);
-            Text = "X Vision 登录";
+            Text = "Perfect Vision 登录";
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
@@ -54,7 +54,7 @@ namespace VisionInspect.App.UI
             };
             var lblTitle = new Label
             {
-                Text = "X Vision",
+                Text = "Perfect Vision",
                 Font = new Font("Microsoft YaHei UI", 20F, FontStyle.Bold),
                 ForeColor = Theme.Text,
                 BackColor = Color.Transparent,

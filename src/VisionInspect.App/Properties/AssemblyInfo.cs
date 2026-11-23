@@ -1,11 +1,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("X Vision")]
-[assembly: AssemblyDescription("X Vision 视觉检测系统")]
+[assembly: AssemblyTitle("Perfect Vision")]
+[assembly: AssemblyDescription("Perfect Vision 视觉检测系统")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("X Vision")]
-[assembly: AssemblyProduct("X Vision")]
+[assembly: AssemblyCompany("Perfect Vision")]
+[assembly: AssemblyProduct("Perfect Vision")]
 [assembly: AssemblyCopyright("Copyright © 2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

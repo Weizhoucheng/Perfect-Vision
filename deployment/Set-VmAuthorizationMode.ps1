@@ -6,7 +6,7 @@ param(
 )
 $ErrorActionPreference='Stop'
 if(!$OfficialLicenseConfirmed){throw 'Confirm that an official license for the requested mode is available. Changing this selector does not create, migrate, activate, or validate a license.'}
-if(@(Get-Process XVision,VisionMaster,VisionMasterServer -ErrorAction SilentlyContinue).Count -gt 0){throw 'Close X Vision and VisionMaster before changing the authorization selector.'}
+if(@(Get-Process XVision,VisionMaster,VisionMasterServer -ErrorAction SilentlyContinue).Count -gt 0){throw 'Close Perfect Vision and VisionMaster before changing the authorization selector.'}
 $root=[IO.Path]::GetFullPath($VisionMasterRoot)
 $application=Join-Path $root 'Applications';if(!(Test-Path -LiteralPath $application)){$application=Join-Path $root 'Application'}
 $prefix=$application.TrimEnd('\')+'\'

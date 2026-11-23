@@ -21,6 +21,6 @@ internal static class ExportBrandAssets
             }
             foreach(var bytes in images)writer.Write(bytes);
         }
-        Console.WriteLine("Exported X Vision day/night logos and seven-size Windows icon: "+folder);
+        Console.WriteLine("Exported Perfect Vision day/night logos and seven-size Windows icon: "+folder);
     }
 }

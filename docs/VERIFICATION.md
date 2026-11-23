@@ -2,6 +2,20 @@
 
 本页区分本次源码整理后的重新验证，以及此前已保留日志的功能验证。通过测试表示所列输入和环境下的结果，不能直接推导现场检出率或长期可靠性。
 
+## 2026-11-23 更名后重新验证
+
+环境：Windows x64，VS 2022 Community，.NET Framework 4.7.2，`D:\Program Files\VisionMaster4.3.0`，MVS SDK `C:\Program Files (x86)\MVDAlgorithmSDK\ReferencedAssemblies`。在更名后的工作副本上执行，包含窗口标题、程序集元数据和文档的展示名修改。
+
+| 验证 | 入口 | 结果 |
+| --- | --- | --- |
+| 七个工程 Release/x64 全量重建 | `scripts/Build.ps1 -Configuration Release` | 通过，0 error |
+| 核心服务 | `scripts/Test-Core.ps1 -Configuration Release` | 11 项通过 |
+| 通讯基础 | `src/VisionInspect.Communication/Tests/Run-Regression.ps1 -Configuration Release` | 8 个场景通过 |
+| 源码提交内容 | `scripts/Check-Repository.ps1` | 160 个跟踪文件通过 |
+| 产品元数据 | 构建产物 `XVision.exe` / `XVision.Sdk.dll` | ProductName、FileDescription、CompanyName 均为 Perfect Vision |
+
+本次未重新执行 GUI 像素级回归、真实相机/PLC 联调与 168 小时拷机；相关历史结论仍按下列 2026-11-09 记录表述，不因更名而升级。
+
 ## 2026-11-10 整理后重新验证
 
 环境：Windows x64，VS 2022 Community，.NET Framework 4.7.2，官方 VisionMaster 4.3.0 与 MVS SDK。使用独立 Git 工作副本，未引用原工程 bin/obj 产物。

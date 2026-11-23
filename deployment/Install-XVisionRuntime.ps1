@@ -18,7 +18,7 @@ function Invoke-OfficialInstaller([string]$Path,[string]$SignerPattern) {
     if(!(Test-Path -LiteralPath $Path -PathType Leaf)){throw "Installer not found: $Path"}
     $signature=Get-AuthenticodeSignature -LiteralPath $Path
     if($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch $SignerPattern){throw "Installer signature could not be verified. No installer was run: $Path"}
-    if(@(Get-Process XVision,VisionMaster -ErrorAction SilentlyContinue).Count -gt 0){throw 'Close X Vision and VisionMaster before installing runtime components.'}
+    if(@(Get-Process XVision,VisionMaster -ErrorAction SilentlyContinue).Count -gt 0){throw 'Close Perfect Vision and VisionMaster before installing runtime components.'}
     $result=Start-Process -FilePath $Path -WorkingDirectory (Split-Path -Parent $Path) -Verb RunAs -WindowStyle Normal -Wait -PassThru
     if($result.ExitCode -notin @(0,3010)){throw "Official installer exited with code $($result.ExitCode)."}
     if($result.ExitCode -eq 3010){Write-Warning 'The official installer requires a Windows restart.'}

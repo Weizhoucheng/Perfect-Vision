@@ -19,7 +19,7 @@ namespace VisionInspect.App.UI
         public RuntimeEnvironmentForm(string configuredRoot)
         {
             _configuredRoot=configuredRoot;Theme.StyleForm(this);
-            Text="X Vision 运行环境与授权";ClientSize=new Size(830,560);MinimumSize=new Size(760,500);StartPosition=FormStartPosition.CenterParent;
+            Text="Perfect Vision 运行环境与授权";ClientSize=new Size(830,560);MinimumSize=new Size(760,500);StartPosition=FormStartPosition.CenterParent;
             var title=new Label{Dock=DockStyle.Top,Height=52,Text="VM 运行环境与授权",Font=Theme.TitleFont,ForeColor=Theme.Text,Padding=new Padding(18,10,0,0)};
             var note=new Label{Dock=DockStyle.Top,Height=68,Text="不插 USB 加密狗运行，需要官方支持的软授权或网络授权。\r\n二次开发 SDK 与驱动负责接口和运行环境，授权有效性以实际加载及运行结果为准。",ForeColor=Theme.TextMuted,Padding=new Padding(18,8,12,0)};
             _details=new TextBox{Dock=DockStyle.Fill,Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Both,WordWrap=false,Font=Theme.MonoFont,BackColor=Theme.Field,ForeColor=Theme.Text,BorderStyle=BorderStyle.FixedSingle};
@@ -48,7 +48,7 @@ namespace VisionInspect.App.UI
                 text.AppendLine();text.AppendLine("无 USB 加密狗的交付步骤：");
                 text.AppendLine("1. 向海康确认现有许可的迁移方式，取得覆盖当前 SDK 和算法的软授权。");
                 text.AppendLine("2. 使用官方工具在线激活，或按本机 C2D / D2C 流程离线激活。");
-                text.AppendLine("3. 依官方安装配置选择对应授权方式，重新启动 VM 运行时与 X Vision。");
+                text.AppendLine("3. 依官方安装配置选择对应授权方式，重新启动 VM 运行时与 Perfect Vision。");
                 text.AppendLine("4. 在不插 USB 加密狗条件下，实际加载 .sol 并运行算法完成验收。");
                 text.AppendLine();text.AppendLine("本页面只读检查配置，不会修改 VM 全局授权方式或激活许可。");
                 _details.Text=text.ToString();_activate.Enabled=!string.IsNullOrEmpty(report.ActivationTool);_export.Enabled=true;

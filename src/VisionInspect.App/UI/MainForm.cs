@@ -196,7 +196,7 @@ namespace VisionInspect.App.UI
             if (!string.IsNullOrWhiteSpace(sourcePath) && Directory.Exists(Path.GetDirectoryName(sourcePath)))
                 folder = Path.GetDirectoryName(sourcePath);
             string baseName = string.IsNullOrWhiteSpace(sourcePath)
-                ? "X Vision_" + DateTime.Now.ToString("yyyyMMdd_HHmmss")
+                ? "Perfect Vision_" + DateTime.Now.ToString("yyyyMMdd_HHmmss")
                 : Path.GetFileNameWithoutExtension(sourcePath) + (rendered ? "_渲染图" : "_原图");
             using (var dialog = new SaveFileDialog
             {
@@ -1059,7 +1059,7 @@ namespace VisionInspect.App.UI
 
             using (var form = new Form
             {
-                Text = "工业相机 · X Vision",
+                Text = "工业相机 · Perfect Vision",
                 Icon = Icon,
                 StartPosition = FormStartPosition.CenterParent,
                 ClientSize = new Size(900, 620),
@@ -2143,7 +2143,7 @@ namespace VisionInspect.App.UI
                     return;
             }
             else if (_app.Settings.General.ConfirmBeforeExit &&
-                     MessageBox.Show("确定退出 X Vision？", "退出",
+                     MessageBox.Show("确定退出 Perfect Vision？", "退出",
                          MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
             {
                 return;

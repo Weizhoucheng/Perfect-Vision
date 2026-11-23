@@ -1,6 +1,6 @@
 海康 VM 运行授权确认事项
 
-项目：X Vision，基于 VisionMaster 4.3.0 x64，宿主为 .NET Framework 4.7.2。
+项目：Perfect Vision，基于 VisionMaster 4.3.0 x64，宿主为 .NET Framework 4.7.2。
 当前：已有 USB 加密狗许可；需要工作站不插 USB 狗，通过本机软授权运行。
 调用方式：通过官方 VM SDK 加载 .sol、输入图像、执行算法、读取结果和修改参数。
 

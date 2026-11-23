@@ -103,7 +103,7 @@ namespace VisionInspect.App.UI
         {
             SuspendLayout();
             Theme.StyleForm(this);
-            Text = "X Vision";
+            Text = "Perfect Vision";
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(1440, 900);
             MinimumSize = new Size(1366, 768);

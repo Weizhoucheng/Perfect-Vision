@@ -125,7 +125,7 @@ MV_CC_TriggerSoftwareExecute_NET / MV_CC_IsDeviceConnected_NET
 
 | 环节 | 工具/脚本 | 说明 |
 | --- | --- | --- |
-| 构建 | `scripts/Build.ps1`、`Check-Environment.ps1` | 校验 VS2022、.NET 4.7.2、VM/MVS SDK 路径后 MSBuild 构建 |
+| 构建 | `scripts/Build.ps1`、`scripts/Check-Environment.ps1` | 校验 VS2022、.NET 4.7.2、VM/MVS SDK 路径后 MSBuild 构建 |
 | 回归 | `Test-Core.ps1`、`Run-Regression.ps1`、`Test-*.ps1` | 自研控制台回归宿主，覆盖状态机、归档、CSV、通讯回环、主题叠加层 |
 | CI | `.github/workflows/core-regression.yml` | `windows-latest` 上执行仓库检查 + 无 SDK 的核心/通讯回归 |
 | 发布 | `Publish.ps1`、`Pack-XVisionSdk.ps1` | 生成应用目录与 SDK 包（`lib/net472`） |
@@ -155,7 +155,7 @@ MV_CC_TriggerSoftwareExecute_NET / MV_CC_IsDeviceConnected_NET
 
 为避免技术栈表述失真，以下技术在本次分析的 5.0.4 交付包中**没有**使用：
 
-- **HALCON / OpenCV**：检测全部由 VM 执行；源码保留 `IAlgorithmEngine` 抽象与 `VmAlgorithmEngine` 实现，但未集成 HALCON HDevEngine 或 OpenCV。仓库文档中的双引擎设计属于扩展方案，不是当前交付能力。
+- **HALCON / OpenCV**：检测全部由 VM 执行；源码保留 `IAlgorithmEngine` 抽象与 `VmAlgorithmEngine` 实现，但未集成 HALCON HDevEngine 或 OpenCV。内部设计文档中的双引擎方案属于扩展规划，不是当前交付能力。
 - **MySQL / SQL Server**：运行时数据为本地 JSON/CSV/PNG/XLSX，无数据库服务；仅开发者签发工具使用 Windows 自带 `winsqlite3.dll` 保存签名密钥，该工具不在本仓库。
 - **Office / COM**：报表自行生成 OpenXML，不调用 Excel。
 - **NModbus / log4net**：协议与日志均为自研实现。

@@ -20,7 +20,7 @@ VM 的方案、流程与模块参数不具备并发安全性，其底层还涉�
 
 代码位于 `VisionInspect.VisionMaster/Interop/VisionMasterDispatcher.cs` 与 `VisionMasterEngine.cs`。
 
-第一版实现按照官方示例使用了 `procedure.SyncRun()`。该方式在测试方案上运行正常，但在模块数量较多的方案中，启动后界面无响应，日志停留在 `Run()` 调用处。原因是 `SyncRun()` 占用了需要处理消息的 STA 线程，VM 内部消息泵无法运转，形成对自身的等待。
+我在第一版实现中按照官方示例使用了 `procedure.SyncRun()`。该方式在测试方案上运行正常，但在模块数量较多的方案中，启动后界面无响应，日志停留在 `Run()` 调用处。原因是 `SyncRun()` 占用了需要处理消息的 STA 线程，VM 内部消息泵无法运转，形成对自身的等待。
 
 当前实现拆分为两个阶段：
 

@@ -1,12 +1,12 @@
 # 变更记录
 
-## 2026-11-23 改名 Perfect Vision，文档重写
+## 2026-11-23 更名与文档重写
 
-- 仓库从 X-vision 改成 Perfect-Vision。对外展示统一叫 Perfect Vision；`XVision.exe`、程序集名、注册表和数据目录没动，老现场升级不受影响。
-- README 重写了一遍，按“为什么这么选、踩过什么坑”来写，补了主界面、相机、通讯、参数四张截图。
-- 新增 `docs/TECH_STACK.md`，记录 VM 4.3 接入、MVS 相机、Modbus/TCP/串口和归档的实现细节。
-- 架构、SDK、通讯、部署文档里的产品名和链接同步改掉。
-- 之前文档里把 MySQL 写进数据归档，实际是本地 JSON/CSV/PNG/XLSX，改过来了。
+- 仓库名称由 X-vision 调整为 Perfect-Vision。产品对外名称统一为 Perfect Vision；`XVision.exe`、程序集名称、注册表项与数据目录保持不变，以避免影响既有现场的升级兼容性。
+- README 按“项目背景、界面、技术选型、实现问题”的结构重写，并补充主界面、相机参数、通讯与参数配置四张实际运行截图。
+- 新增 `docs/TECH_STACK.md`，记录 VisionMaster 4.3 接入、MVS 相机、Modbus/TCP/串口及数据归档的实现细节。
+- 架构、SDK、通讯与部署文档中的产品名称和链接同步更新。
+- 原文档将 MySQL 列为数据归档方案，与实际实现不符；当前归档使用本地 JSON/CSV/PNG/XLSX，已更正。
 
 ## 2026-11-10 仓库整理
 

@@ -2,11 +2,11 @@
 
 本页区分本次源码整理后的重新验证，以及此前已保留日志的功能验证。通过测试表示所列输入和环境下的结果，不能直接推导现场检出率或长期可靠性。
 
-## 2026-11-23 改名后又跑了一遍
+## 2026-11-23 更名后的验证
 
-环境没变：Windows x64、VS2022 Community、.NET Framework 4.7.2、`D:\Program Files\VisionMaster4.3.0`、MVS SDK。
+环境保持不变：Windows x64、VS2022 Community、.NET Framework 4.7.2、`D:\Program Files\VisionMaster4.3.0`、MVS SDK。
 
-这次只动了窗口标题、程序集元数据和文档，还是从头编译了一遍，顺便把构建出来的 exe 元数据也核对了。
+本次修改仅涉及窗口标题、程序集元数据与文档，仍执行了完整重建，并核对构建产物的元数据。
 
 | 验证 | 入口 | 结果 |
 | --- | --- | --- |
@@ -16,7 +16,7 @@
 | 源码提交内容 | `scripts/Check-Repository.ps1` | 160 个跟踪文件通过 |
 | 产品元数据 | 构建产物 `XVision.exe` / `XVision.Sdk.dll` | ProductName、FileDescription、CompanyName 均为 Perfect Vision |
 
-GUI 像素级回归、真实相机/PLC 和 168 小时拷机这次没重跑，仍按下面 2026-11-09 的记录算，不因为改了个名字就升级结论。
+GUI 像素级回归、真实相机与 PLC 联调、168 小时连续运行测试本次未重新执行；相关结论仍以 2026-11-09 的记录为准，不因更名而提升验证等级。
 
 ## 2026-11-10 整理后重新验证
 

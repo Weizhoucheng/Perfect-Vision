@@ -20,7 +20,7 @@ VM 的方案、流程与模块参数不具备并发安全性，其底层还涉�
 
 代码位于 `VisionInspect.VisionMaster/Interop/VisionMasterDispatcher.cs` 与 `VisionMasterEngine.cs`。
 
-第一版实现按照官方示例使用了 `procedure.SyncRun()`。该方式在测试方案上运行正常，但在模块数量较多的方案中，启动后界面无响应，日志停留在 `Run()` 调用处。原因是 `SyncRun()` 占用了需要处理消息的 STA 线程，VM 内部消息泵无法运转，形成等待自身的情况。
+第一版实现按照官方示例使用了 `procedure.SyncRun()`。该方式在测试方案上运行正常，但在模块数量较多的方案中，启动后界面无响应，日志停留在 `Run()` 调用处。原因是 `SyncRun()` 占用了需要处理消息的 STA 线程，VM 内部消息泵无法运转，形成对自身的等待。
 
 当前实现拆分为两个阶段：
 
@@ -104,7 +104,7 @@ foreach (var info in procedure.ModuResult.GetAllOutputNameInfo()) {
 
 ## 相机
 
-MVS 的调用本身并不复杂，主要复杂度集中在生命周期管理。
+MVS 的调用流程较为直接，主要复杂度集中在生命周期管理。
 
 回调内仅执行三项操作：拷贝当前帧、唤醒等待中的检测线程、按 `PreviewFrameSkip` 决定是否发布预览。算法与界面逻辑均不进入回调；MVS 回调对耗时较为敏感，阻塞会导致丢帧。
 
